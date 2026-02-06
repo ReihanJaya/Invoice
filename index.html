@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Aplikasi Invoice Momski Catering</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
+
+<!-- LIBRARY PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body>
+
+<header class="app-header">
+    <img src="logo.jpeg" alt="Logo Momski Catering" class="logo">
+    <h1>MOMSKI CATERING</h1>
+    <p>Aplikasi Invoice</p>
+</header>
+
+<h3 class="invoice-number">Nomor Invoice: <span id="invNum"></span></h3>
+
+<div class="container">
+
+<!-- FORM INPUT -->
+<div class="card">
+<h2>Input Pesanan</h2>
+
+<label>Nama Pelanggan</label>
+<input type="text" id="nama">
+
+<label>Acara</label>
+<input type="text" id="acara">
+
+<label>Alamat</label>
+<input type="text" id="alamat">
+
+<label>No WhatsApp</label>
+<input type="text" id="wa">
+
+<h3>Menu (Isi Sendiri)</h3>
+
+<div class="menu-row">
+<input type="text" id="menu1" placeholder="Nama menu 1">
+<input type="number" id="harga1" placeholder="Harga per porsi">
+<input type="number" id="porsi1" placeholder="Jumlah porsi">
+</div>
+
+<div class="menu-row">
+<input type="text" id="menu2" placeholder="Nama menu 2">
+<input type="number" id="harga2" placeholder="Harga per porsi">
+<input type="number" id="porsi2" placeholder="Jumlah porsi">
+</div>
+
+<div class="menu-row">
+<input type="text" id="menu3" placeholder="Nama menu 3">
+<input type="number" id="harga3" placeholder="Harga per porsi">
+<input type="number" id="porsi3" placeholder="Jumlah porsi">
+</div>
+
+<div class="menu-row">
+<input type="text" id="menu4" placeholder="Nama menu 4">
+<input type="number" id="harga4" placeholder="Harga per porsi">
+<input type="number" id="porsi4" placeholder="Jumlah porsi">
+</div>
+
+<button onclick="buatInvoice()">Buat Invoice</button>
+</div>
+
+<!-- HASIL INVOICE -->
+<div class="card" id="invoice-box">
+
+<div id="pdf-area">
+
+<h2>Invoice Momski Catering</h2>
+
+<p><strong>Nomor:</strong> <span id="outInv"></span></p>
+<p><strong>Nama:</strong> <span id="outNama"></span></p>
+<p><strong>Acara:</strong> <span id="outAcara"></span></p>
+<p><strong>Alamat:</strong> <span id="outAlamat"></span></p>
+<p><strong>WA:</strong> <span id="outWa"></span></p>
+
+<hr>
+
+<table>
+<tr><th>Menu</th><th>Porsi</th><th>Total</th></tr>
+<tr><td id="outMenu1"></td><td id="q1"></td><td id="t1"></td></tr>
+<tr><td id="outMenu2"></td><td id="q2"></td><td id="t2"></td></tr>
+<tr><td id="outMenu3"></td><td id="q3"></td><td id="t3"></td></tr>
+<tr><td id="outMenu4"></td><td id="q4"></td><td id="t4"></td></tr>
+</table>
+
+<hr>
+
+<h3>Total: <span id="grand"></span></h3>
+<h3>DP (50%): <span id="dp"></span></h3>
+<h3>Sisa: <span id="sisa"></span></h3>
+
+<p style="margin-top:20px; text-align:center;">
+💛 Terima kasih telah mempercayakan acara Anda kepada Momski Catering.  
+Semoga hidangan kami menambah kebahagiaan momen spesial Anda! 🍽️✨
+</p>
+
+</div>
+
+<div class="btn-row">
+<button onclick="printInvoice()">🖨️ Print Invoice</button>
+<button onclick="downloadPDF()">📄 Download PDF</button>
+</div>
+
+</div>
+</div>
+
+<h2 class="judul">Riwayat Invoice</h2>
+<div class="history" id="history"></div>
+
+<script>
+function formatRupiah(angka){
+    return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0
+    }).format(angka);
+}
+
+function generateInvoiceNumber(){
+    return "INV/MC/" + new Date().getFullYear() + "/" + Math.floor(Math.random()*900+100);
+}
+
+let invNumber = generateInvoiceNumber();
+document.getElementById("invNum").innerText = invNumber;
+
+let latestInvoiceData = null;
+
+function buatInvoice(){
+let nama = document.getElementById("nama").value;
+let acara = document.getElementById("acara").value;
+let alamat = document.getElementById("alamat").value;
+let wa = document.getElementById("wa").value;
+
+let menu1 = document.getElementById("menu1").value;
+let menu2 = document.getElementById("menu2").value;
+let menu3 = document.getElementById("menu3").value;
+let menu4 = document.getElementById("menu4").value;
+
+let harga1 = document.getElementById("harga1").value || 0;
+let harga2 = document.getElementById("harga2").value || 0;
+let harga3 = document.getElementById("harga3").value || 0;
+let harga4 = document.getElementById("harga4").value || 0;
+
+let p1 = document.getElementById("porsi1").value || 0;
+let p2 = document.getElementById("porsi2").value || 0;
+let p3 = document.getElementById("porsi3").value || 0;
+let p4 = document.getElementById("porsi4").value || 0;
+
+let t1 = p1 * harga1;
+let t2 = p2 * harga2;
+let t3 = p3 * harga3;
+let t4 = p4 * harga4;
+
+let total = t1 + t2 + t3 + t4;
+let dp = total * 0.5;
+let sisa = total - dp;
+
+document.getElementById("outInv").innerText = invNumber;
+document.getElementById("outNama").innerText = nama;
+document.getElementById("outAcara").innerText = acara;
+document.getElementById("outAlamat").innerText = alamat;
+document.getElementById("outWa").innerText = wa;
+
+document.getElementById("outMenu1").innerText = menu1;
+document.getElementById("outMenu2").innerText = menu2;
+document.getElementById("outMenu3").innerText = menu3;
+document.getElementById("outMenu4").innerText = menu4;
+
+document.getElementById("q1").innerText = p1;
+document.getElementById("q2").innerText = p2;
+document.getElementById("q3").innerText = p3;
+document.getElementById("q4").innerText = p4;
+
+document.getElementById("t1").innerText = formatRupiah(t1);
+document.getElementById("t2").innerText = formatRupiah(t2);
+document.getElementById("t3").innerText = formatRupiah(t3);
+document.getElementById("t4").innerText = formatRupiah(t4);
+
+document.getElementById("grand").innerText = formatRupiah(total);
+document.getElementById("dp").innerText = formatRupiah(dp);
+document.getElementById("sisa").innerText = formatRupiah(sisa);
+
+latestInvoiceData = {
+    nomor: invNumber,
+    nama, acara, alamat, wa,
+    menu1, menu2, menu3, menu4,
+    p1, p2, p3, p4,
+    total
+};
+
+let riwayat = JSON.parse(localStorage.getItem("riwayat")) || [];
+riwayat.push(latestInvoiceData);
+localStorage.setItem("riwayat", JSON.stringify(riwayat));
+
+tampilkanRiwayat();
+
+invNumber = generateInvoiceNumber();
+document.getElementById("invNum").innerText = invNumber;
+}
+
+function tampilkanRiwayat(){
+let historyDiv = document.getElementById("history");
+let riwayat = JSON.parse(localStorage.getItem("riwayat")) || [];
+
+historyDiv.innerHTML = "";
+
+riwayat.forEach((item, index) => {
+historyDiv.innerHTML += `
+<div class="history-card">
+<p><strong>${item.nomor}</strong></p>
+<p>Nama: ${item.nama}</p>
+<p>Acara: ${item.acara}</p>
+<p>Total: ${formatRupiah(item.total)}</p>
+
+<button onclick="lihatDetail(${index})">🔍 Lihat Detail</button>
+<button onclick="hapusRiwayat(${index})">🗑️ Hapus</button>
+</div>
+`;
+});
+}
+
+function lihatDetail(i){
+let riwayat = JSON.parse(localStorage.getItem("riwayat")) || [];
+let d = riwayat[i];
+
+document.getElementById("outInv").innerText = d.nomor;
+document.getElementById("outNama").innerText = d.nama;
+document.getElementById("outAcara").innerText = d.acara;
+document.getElementById("outAlamat").innerText = d.alamat;
+document.getElementById("outWa").innerText = d.wa;
+
+alert("Invoice dimuat kembali di panel kanan.");
+}
+
+function hapusRiwayat(i){
+let riwayat = JSON.parse(localStorage.getItem("riwayat")) || [];
+riwayat.splice(i,1);
+localStorage.setItem("riwayat", JSON.stringify(riwayat));
+tampilkanRiwayat();
+}
+
+function printInvoice(){
+if(!latestInvoiceData){
+alert("Buat invoice dulu sebelum print!");
+return;
+}
+window.print();
+}
+
+function downloadPDF(){
+
+let namaPemesan = document.getElementById("outNama").innerText;
+
+if(!namaPemesan){
+alert("Buat invoice dulu sebelum download PDF!");
+return;
+}
+
+let namaFile = namaPemesan.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
+
+let element = document.getElementById("pdf-area");
+
+let opt = {
+    margin: 10,
+    filename: namaFile + "_Invoice_Momski.pdf",
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" }
+};
+
+html2pdf().set(opt).from(element).save();
+}
+
+window.onload = tampilkanRiwayat;
+</script>
+
+</body>
+</html>
